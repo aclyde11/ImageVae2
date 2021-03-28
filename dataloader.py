@@ -1,13 +1,14 @@
-import torch
-from torchvision import datasets, transforms
-from invert import *
+import io
+
+import cairosvg
+import numpy as np
+from PIL import Image
 from rdkit import Chem
 from rdkit.Chem import rdDepictor
 from rdkit.Chem.Draw import rdMolDraw2D
-from PIL import Image
-import io
-import cairosvg
-import numpy as np
+from torchvision import transforms
+
+from invert import *
 
 
 class MoleLoader(torch.utils.data.Dataset):
@@ -52,7 +53,6 @@ class MoleLoader(torch.utils.data.Dataset):
         print(s)
         self.vocab = list(s)
 
-
     def from_one_hot_array(self, vec):
         oh = np.where(vec == 1)
         if oh[0].shape == (0,):
@@ -70,7 +70,7 @@ class MoleLoader(torch.utils.data.Dataset):
 
     def one_hot_encoded_fn(self, row):
         return np.array(map(lambda x: self.one_hot_array(x, self.vocab)),
-                                                  self.one_hot_index(row, self.vocab))
+                        self.one_hot_index(row, self.vocab))
 
     def apply_t(self, x):
         x = x + list((''.join([char * (self.embedding_width - len(x)) for char in [' ']])))

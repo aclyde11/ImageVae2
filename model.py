@@ -1,8 +1,6 @@
-from torch.autograd import Variable
-from torch.nn import functional as F
-from ResNet import ResNet, BasicBlock, Bottleneck
 import math
-import numpy as np
+
+from ResNet import ResNet, BasicBlock, Bottleneck
 
 model_urls = {
     'resnet18': 'https://download.pytorch.org/models/resnet18-5c106cde.pth',
@@ -12,13 +10,6 @@ model_urls = {
     'resnet152': 'https://download.pytorch.org/models/resnet152-b121ed2d.pth',
 }
 
-import torch.nn as nn
-from torch.autograd import Variable
-import numpy as np
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch.nn.utils import weight_norm as wn
 from extra_uts import *
 
 

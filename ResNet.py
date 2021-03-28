@@ -1,8 +1,6 @@
-import torch
-from torch.autograd import Variable
-from skimage import io, transform
-from torch import nn, optim
+from torch import nn
 from torch.nn import functional as F
+
 
 def conv3x3(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
@@ -14,19 +12,16 @@ def conv1x1(in_planes, out_planes, stride=1):
     """1x1 convolution"""
     return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
 
+
 def conv3x3T(in_planes, out_planes, stride=1):
     """3x3 convolution with padding"""
     return nn.ConvTranspose2d(in_planes, out_planes, kernel_size=3, stride=stride,
-                     padding=1, bias=False)
+                              padding=1, bias=False)
 
 
 def conv1x1T(in_planes, out_planes, stride=1):
     """1x1 convolution"""
     return nn.ConvTranspose2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
-
-
-
-
 
 
 class BasicBlock(nn.Module):
@@ -114,7 +109,7 @@ class ResNet(nn.Module):
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        #self.fc = nn.Linear(512 * block.expansion, num_classes)
+        # self.fc = nn.Linear(512 * block.expansion, num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -161,8 +156,8 @@ class ResNet(nn.Module):
         x = self.layer4(x)
 
         x = self.avgpool(x)
-       # x = x.view(x.size(0), -1)
-       # x = self.fc(x)
+        # x = x.view(x.size(0), -1)
+        # x = self.fc(x)
 
         return x
 

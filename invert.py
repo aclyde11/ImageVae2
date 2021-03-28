@@ -1,9 +1,5 @@
-import torch
-from PIL import Image, ImageOps
-import numpy as np
-
-import torchvision
 import torchvision.transforms.functional as F
+from PIL import Image, ImageOps
 
 
 class Invert(object):

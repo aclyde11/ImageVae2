@@ -1,10 +1,8 @@
-import pdb
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-from torch.nn.utils import weight_norm as wn
-import numpy as np
 
 
 def concat_elu(x):
@@ -90,7 +88,7 @@ def discretized_mix_logistic_loss(x, l):
 
     inner_inner_cond = (cdf_delta > 1e-5).float()
     inner_inner_out = inner_inner_cond * torch.log(torch.clamp(cdf_delta, min=1e-12)) + (1. - inner_inner_cond) * (
-                log_pdf_mid - np.log(127.5))
+            log_pdf_mid - np.log(127.5))
     inner_cond = (x > 0.999).float()
     inner_out = inner_cond * log_one_minus_cdf_min + (1. - inner_cond) * inner_inner_out
     cond = (x < -0.999).float()
@@ -138,7 +136,7 @@ def discretized_mix_logistic_loss_1d(x, l):
 
     inner_inner_cond = (cdf_delta > 1e-5).float()
     inner_inner_out = inner_inner_cond * torch.log(torch.clamp(cdf_delta, min=1e-12)) + (1. - inner_inner_cond) * (
-                log_pdf_mid - np.log(127.5))
+            log_pdf_mid - np.log(127.5))
     inner_cond = (x > 0.999).float()
     inner_out = inner_cond * log_one_minus_cdf_min + (1. - inner_cond) * inner_inner_out
     cond = (x < -0.999).float()
