@@ -12,11 +12,58 @@ model_urls = {
 
 from extra_uts import *
 
+from utils import MS_SSIM
+
+class customLoss(nn.Module):
+    def __init__(self, annealing_rate=0.1, annealing_on=True, use_crispy_loss=True):
+        super(customLoss, self).__init__()
+        self.mse_loss = nn.MSELoss(reduction="sum")
+        self.use_annealing = annealing_on
+        self.annealing_rate = annealing_rate
+        self.use_crispy_loss = use_crispy_loss
+        if self.use_crispy_loss:
+            self.crispyLoss = MS_SSIM()
+        else:
+            self.crispyLoss = None
+
+    def compute_kernel(self, x, y):
+        x_size = x.shape[0]
+        y_size = y.shape[0]
+        dim = x.shape[1]
+
+        tiled_x = x.view(x_size, 1, dim).repeat(1, y_size, 1)
+        tiled_y = y.view(1, y_size, dim).repeat(x_size, 1, 1)
+
+        return torch.exp(-torch.mean((tiled_x - tiled_y) ** 2, dim=2) / dim * 1.0)
+
+    def compute_mmd(self, x, y):
+        x_kernel = self.compute_kernel(x, x)
+        y_kernel = self.compute_kernel(y, y)
+        xy_kernel = self.compute_kernel(x, y)
+        return torch.mean(x_kernel) + torch.mean(y_kernel) - 2 * torch.mean(xy_kernel)
+
+    def forward(self, x_recon, x, mu, logvar, epoch):
+        loss_MSE = self.mse_loss(x_recon, x)
+        # loss_mmd = self.compute_mmd(x_recon, x)
+
+
+        loss_KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+
+        if self.use_annealing:
+            loss = loss_MSE + min(1.0, self.annealing_rate * epoch) * loss_KLD
+        else:
+            loss = loss_MSE + loss_KLD
+
+        if self.use_crispy_loss:
+            loss += self.crispyLoss(x_recon, x)
+
+        return loss
+
 
 class nin(nn.Module):
     def __init__(self, dim_in, dim_out):
         super(nin, self).__init__()
-        self.lin_a = wn(nn.Linear(dim_in, dim_out))
+        self.lin_a = (nn.Linear(dim_in, dim_out))
         self.dim_out = dim_out
 
     def forward(self, x):

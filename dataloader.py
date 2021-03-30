@@ -2,6 +2,7 @@ import io
 
 import cairosvg
 import numpy as np
+import torch
 from PIL import Image
 from rdkit import Chem
 from rdkit.Chem import rdDepictor
