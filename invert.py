@@ -24,9 +24,9 @@ class Invert(object):
             r, g, b = inv.split()
             inv = Image.merge('RGBA', (r, g, b, a))
         elif img.mode == 'LA':
-            l, a = img.split()
-            l = ImageOps.invert(l)
-            inv = Image.merge('LA', (l, a))
+            m, a = img.split()
+            m = ImageOps.invert(l)
+            inv = Image.merge('LA', (m, a))
         else:
             inv = ImageOps.invert(img)
         return inv
