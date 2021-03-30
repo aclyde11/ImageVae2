@@ -14,6 +14,7 @@ from extra_uts import *
 
 from utils import MS_SSIM
 
+
 class customLoss(nn.Module):
     def __init__(self, annealing_rate=0.1, annealing_on=True, use_crispy_loss=True):
         super(customLoss, self).__init__()
@@ -45,7 +46,6 @@ class customLoss(nn.Module):
     def forward(self, x_recon, x, mu, logvar, epoch):
         loss_MSE = self.mse_loss(x_recon, x)
         # loss_mmd = self.compute_mmd(x_recon, x)
-
 
         loss_KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
 
@@ -120,7 +120,7 @@ class down_shifted_deconv2d(nn.Module):
         x = self.deconv(x)
         xs = [int(y) for y in x.size()]
         return x[:, :, :(xs[2] - self.filter_size[0] + 1),
-               int((self.filter_size[1] - 1) / 2):(xs[3] - int((self.filter_size[1] - 1) / 2))]
+                 int((self.filter_size[1] - 1) / 2):(xs[3] - int((self.filter_size[1] - 1) / 2))]
 
 
 class down_right_shifted_conv2d(nn.Module):
@@ -166,7 +166,7 @@ class down_right_shifted_deconv2d(nn.Module):
 
 
 '''
-skip connection parameter : 0 = no skip connection 
+skip connection parameter : 0 = no skip connection
                             1 = skip connection where skip input size === input size
                             2 = skip connection where skip input size === 2 * input size
 '''
@@ -311,7 +311,7 @@ class PixelCNN(nn.Module):
         #     x = torch.cat((x, self.init_padding), 1)
         # print("PADDING: ", self.init_padding.shape)
 
-        ###      UP PASS    ###
+        # ##      UP PASS    ###
         # print("final: ", x.shape)
         u_list = [self.u_init(x)]
         ul_list = [self.ul_init[0](x) + self.ul_init[1](x)]
@@ -326,7 +326,7 @@ class PixelCNN(nn.Module):
                 u_list += [self.downsize_u_stream[i](u_list[-1])]
                 ul_list += [self.downsize_ul_stream[i](ul_list[-1])]
 
-        ###    DOWN PASS    ###
+        # ##    DOWN PASS    ###
         u = u_list.pop()
         ul = ul_list.pop()
 
@@ -570,7 +570,7 @@ class TransposeBlock(nn.Module):
         return self.relu(x)
 
 
-## Dense Net
+# Dense Net
 
 class ListModule(nn.Module):
     def __init__(self, *args):
@@ -853,7 +853,7 @@ class ComboVAE(nn.Module):
         self.z_mean = nn.Linear(rep_size * 2, rep_size)
         self.z_log_var = nn.Linear(rep_size * 2, rep_size)
 
-    def encode(self, x1, x2):  ##returns single values encoded
+    def encode(self, x1, x2):  # returns single values encoded
         return self.encoder1(x1), self.encoder2(x2)
 
     def reparam(self, logvar, mu):
@@ -1037,8 +1037,7 @@ class MolEncoder(nn.Module):
 
         bce = nn.BCELoss(size_average=True)
         xent_loss = self.i * bce(x_decoded_mean, x.detach())
-        kl_loss = -0.5 * torch.mean(1. + z_log_var - z_mean ** 2. -
-                                    torch.exp(z_log_var))
+        kl_loss = -0.5 * torch.mean(1. + z_log_var - z_mean ** 2. - torch.exp(z_log_var))
 
         return kl_loss + xent_loss
 
@@ -1081,8 +1080,7 @@ class DenseMolEncoder(nn.Module):
 
         bce = nn.BCELoss(size_average=True)
         xent_loss = self.i * bce(x_decoded_mean, x.detach())
-        kl_loss = -0.5 * torch.mean(1. + z_log_var - z_mean ** 2. -
-                                    torch.exp(z_log_var))
+        kl_loss = -0.5 * torch.mean(1. + z_log_var - z_mean ** 2. - torch.exp(z_log_var))
 
         return kl_loss + xent_loss
 
@@ -1164,8 +1162,7 @@ class TestVAE(nn.Module):
         bce = nn.MSELoss(reduction="sum")
 
         xent_loss = bce(x_decoded_mean, x.detach())
-        kl_loss = -0.5 * torch.mean(1. + z_log_var - z_mean ** 2. -
-                                    torch.exp(z_log_var))
+        kl_loss = -0.5 * torch.mean(1. + z_log_var - z_mean ** 2. - torch.exp(z_log_var))
 
         return kl_loss + xent_loss
 

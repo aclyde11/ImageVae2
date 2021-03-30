@@ -14,7 +14,7 @@ logger.setLevel(logging.CRITICAL)
 
 def get_args():
     parser = argparse.ArgumentParser(description='PyTorch ImageNet Training')
-    parser.add_argument('-b',  default=64, type=int, help='mini-batch size per process (default: 256)')
+    parser.add_argument('-b', default=64, type=int, help='mini-batch size per process (default: 256)')
     parser.add_argument('-o', help='output files path', default='samples/')
     parser.add_argument('--checkpoint', required=True, type=str, help='saved model to sample from')
     parser.add_argument('-n', type=int, default=64, help='number of samples to draw')
@@ -53,7 +53,6 @@ if __name__ == '__main__':
     decoder = decoder.to(device)
     model = GeneralVae(encoder, decoder, rep_size=512).to(device)
 
-
     def interpolate_points(x, y, sampling):
         ln = LinearRegression()
         data = np.stack((x, y))
@@ -61,7 +60,6 @@ if __name__ == '__main__':
         ln.fit(data_train, data)
 
         return ln.predict(sampling.reshape(-1, 1)).astype(np.float32)
-
 
     times = int(args.n / args.b)
     print(

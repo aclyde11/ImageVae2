@@ -30,7 +30,7 @@ class MoleLoader(torch.utils.data.Dataset):
         if kekulize:
             try:
                 Chem.Kekulize(mc)
-            except:
+            except Except:
                 mc = Chem.Mol(mol.ToBinary())
         if not mc.GetNumConformers():
             rdDepictor.Compute2DCoords(mc)

@@ -124,7 +124,6 @@ if __name__ == '__main__':
         batch_size=args.batch_size, shuffle=True, drop_last=True,
         **kwargs)
 
-
     def train(epoch):
         print("Epoch {}: batch_size {}".format(epoch, get_batch_size(epoch)))
         model.train()
@@ -147,13 +146,12 @@ if __name__ == '__main__':
             if batch_idx % log_interval == 0:
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f} {}'.format(
                     epoch, batch_idx * len(data), len(train_loader_food.dataset),
-                           100. * batch_idx / len(train_loader_food),
+                    100. * batch_idx / len(train_loader_food),
                     loss_meter.avg, datetime.datetime.now()))
 
         print('====> Epoch: {} Average loss: {:.4f}'.format(
             epoch, loss_meter.avg))
         return loss_meter.avg
-
 
     def interpolate_points(x, y, sampling):
         ln = LinearRegression()
@@ -162,7 +160,6 @@ if __name__ == '__main__':
         ln.fit(data_train, data)
 
         return ln.predict(sampling.reshape(-1, 1)).astype(np.float32)
-
 
     def test(epoch):
         model.eval()
@@ -226,7 +223,6 @@ if __name__ == '__main__':
     for epoch in trn_rng:
         for param_group in optimizer.param_groups:
             print("Current learning rate is: {}".format(param_group['lr']))
-
 
         loss = train(epoch)
         test(epoch)

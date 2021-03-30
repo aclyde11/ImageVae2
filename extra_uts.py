@@ -53,8 +53,8 @@ def discretized_mix_logistic_loss(x, l):
     m2 = (means[:, :, :, 1, :] + coeffs[:, :, :, 0, :]
           * x[:, :, :, 0, :]).view(xs[0], xs[1], xs[2], 1, nr_mix)
 
-    m3 = (means[:, :, :, 2, :] + coeffs[:, :, :, 1, :] * x[:, :, :, 0, :] +
-          coeffs[:, :, :, 2, :] * x[:, :, :, 1, :]).view(xs[0], xs[1], xs[2], 1, nr_mix)
+    m3 = (means[:, :, :, 2, :] + coeffs[:, :, :, 1, :] * x[:, :, :, 0, :]
+          + coeffs[:, :, :, 2, :] * x[:, :, :, 1, :]).view(xs[0], xs[1], xs[2], 1, nr_mix)
 
     means = torch.cat((means[:, :, :, 0, :].unsqueeze(3), m2, m3), dim=3)
     centered_x = x - means
@@ -87,8 +87,7 @@ def discretized_mix_logistic_loss(x, l):
     # the observed sub-pixel value
 
     inner_inner_cond = (cdf_delta > 1e-5).float()
-    inner_inner_out = inner_inner_cond * torch.log(torch.clamp(cdf_delta, min=1e-12)) + (1. - inner_inner_cond) * (
-            log_pdf_mid - np.log(127.5))
+    inner_inner_out = inner_inner_cond * torch.log(torch.clamp(cdf_delta, min=1e-12)) + (1. - inner_inner_cond) * (log_pdf_mid - np.log(127.5))
     inner_cond = (x > 0.999).float()
     inner_out = inner_cond * log_one_minus_cdf_min + (1. - inner_cond) * inner_inner_out
     cond = (x < -0.999).float()
@@ -135,8 +134,7 @@ def discretized_mix_logistic_loss_1d(x, l):
     log_pdf_mid = mid_in - log_scales - 2. * F.softplus(mid_in)
 
     inner_inner_cond = (cdf_delta > 1e-5).float()
-    inner_inner_out = inner_inner_cond * torch.log(torch.clamp(cdf_delta, min=1e-12)) + (1. - inner_inner_cond) * (
-            log_pdf_mid - np.log(127.5))
+    inner_inner_out = inner_inner_cond * torch.log(torch.clamp(cdf_delta, min=1e-12)) + (1. - inner_inner_cond) * (log_pdf_mid - np.log(127.5))
     inner_cond = (x > 0.999).float()
     inner_out = inner_cond * log_one_minus_cdf_min + (1. - inner_cond) * inner_inner_out
     cond = (x < -0.999).float()
@@ -149,7 +147,8 @@ def discretized_mix_logistic_loss_1d(x, l):
 def to_one_hot(tensor, n, fill_with=1.):
     # we perform one hot encore with respect to the last axis
     one_hot = torch.FloatTensor(tensor.size() + (n,)).zero_()
-    if tensor.is_cuda: one_hot = one_hot.cuda()
+    if tensor.is_cuda:
+        one_hot = one_hot.cuda()
     one_hot.scatter_(len(tensor.size()), tensor.unsqueeze(-1), fill_with)
     return Variable(one_hot)
 
@@ -166,7 +165,8 @@ def sample_from_discretized_mix_logistic_1d(l, nr_mix):
 
     # sample mixture indicator from softmax
     temp = torch.FloatTensor(logit_probs.size())
-    if l.is_cuda: temp = temp.cuda()
+    if l.is_cuda:
+        temp = temp.cuda()
     temp.uniform_(1e-5, 1. - 1e-5)
     temp = logit_probs.data - torch.log(- torch.log(temp))
     _, argmax = temp.max(dim=3)
@@ -178,7 +178,8 @@ def sample_from_discretized_mix_logistic_1d(l, nr_mix):
     log_scales = torch.clamp(torch.sum(
         l[:, :, :, :, nr_mix:2 * nr_mix] * sel, dim=4), min=-7.)
     u = torch.FloatTensor(means.size())
-    if l.is_cuda: u = u.cuda()
+    if l.is_cuda:
+        u = u.cuda()
     u.uniform_(1e-5, 1. - 1e-5)
     u = Variable(u)
     x = means + torch.exp(log_scales) * (torch.log(u) - torch.log(1. - u))
@@ -198,7 +199,8 @@ def sample_from_discretized_mix_logistic(l, nr_mix):
     l = l[:, :, :, nr_mix:].contiguous().view(xs + [nr_mix * 3])
     # sample mixture indicator from softmax
     temp = torch.FloatTensor(logit_probs.size())
-    if l.is_cuda: temp = temp.cuda()
+    if l.is_cuda:
+        temp = temp.cuda()
     temp.uniform_(1e-5, 1. - 1e-5)
     temp = logit_probs.data - torch.log(- torch.log(temp))
     _, argmax = temp.max(dim=3)
@@ -214,7 +216,8 @@ def sample_from_discretized_mix_logistic(l, nr_mix):
     # sample from logistic & clip to interval
     # we don't actually round to the nearest 8bit value when sampling
     u = torch.FloatTensor(means.size())
-    if l.is_cuda: u = u.cuda()
+    if l.is_cuda:
+        u = u.cuda()
     u.uniform_(1e-5, 1. - 1e-5)
     u = Variable(u)
     x = means + torch.exp(log_scales) * (torch.log(u) - torch.log(1. - u))
