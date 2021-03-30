@@ -65,8 +65,7 @@ class MS_SSIM(torch.nn.Module):
             img1 = filtered_im1
             img2 = filtered_im2
 
-        value = (torch.prod(mcs[0:levels - 1] ** weight[0:levels - 1]) *
-                 (msssim[levels - 1] ** weight[levels - 1]))
+        value = (torch.prod(mcs[0:levels - 1] ** weight[0:levels - 1]) * (msssim[levels - 1] ** weight[levels - 1]))
         return value
 
     def forward(self, img1, img2):

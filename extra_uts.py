@@ -29,21 +29,21 @@ def log_prob_from_logits(x):
     return x - m - torch.log(torch.sum(torch.exp(x - m), dim=axis, keepdim=True))
 
 
-def discretized_mix_logistic_loss(x, l):
+def discretized_mix_logistic_loss(x, lh):
     """ log-likelihood for mixture of discretized logistics, assumes the data has been rescaled to [-1,1] interval """
     # Pytorch ordering
     x = x.permute(0, 2, 3, 1)
-    l = l.permute(0, 2, 3, 1)
+    lh = lh.permute(0, 2, 3, 1)
     xs = [int(y) for y in x.size()]
-    ls = [int(y) for y in l.size()]
+    ls = [int(y) for y in lh.size()]
 
     # here and below: unpacking the params of the mixture of logistics
     nr_mix = int(ls[-1] / 10)
-    logit_probs = l[:, :, :, :nr_mix]
-    l = l[:, :, :, nr_mix:].contiguous().view(xs + [nr_mix * 3])  # 3 for mean, scale, coef
-    means = l[:, :, :, :, :nr_mix]
-    # log_scales = torch.max(l[:, :, :, :, nr_mix:2 * nr_mix], -7.)
-    log_scales = torch.clamp(l[:, :, :, :, nr_mix:2 * nr_mix], min=-7.)
+    logit_probs = lh[:, :, :, :nr_mix]
+    lh = lh[:, :, :, nr_mix:].contiguous().view(xs + [nr_mix * 3])  # 3 for mean, scale, coef
+    means = lh[:, :, :, :, :nr_mix]
+    # log_scales = torch.max(lh[:, :, :, :, nr_mix:2 * nr_mix], -7.)
+    log_scales = torch.clamp(lh[:, :, :, :, nr_mix:2 * nr_mix], min=-7.)
 
     coeffs = F.tanh(l[:, :, :, :, 2 * nr_mix:3 * nr_mix])
     # here and below: getting the means and adjusting them based on preceding
@@ -53,8 +53,8 @@ def discretized_mix_logistic_loss(x, l):
     m2 = (means[:, :, :, 1, :] + coeffs[:, :, :, 0, :]
           * x[:, :, :, 0, :]).view(xs[0], xs[1], xs[2], 1, nr_mix)
 
-    m3 = (means[:, :, :, 2, :] + coeffs[:, :, :, 1, :] * x[:, :, :, 0, :] +
-          coeffs[:, :, :, 2, :] * x[:, :, :, 1, :]).view(xs[0], xs[1], xs[2], 1, nr_mix)
+    m3 = (means[:, :, :, 2, :] + coeffs[:, :, :, 1, :] * x[:, :, :, 0, :]
+          + coeffs[:, :, :, 2, :] * x[:, :, :, 1, :]).view(xs[0], xs[1], xs[2], 1, nr_mix)
 
     means = torch.cat((means[:, :, :, 0, :].unsqueeze(3), m2, m3), dim=3)
     centered_x = x - means
@@ -87,8 +87,7 @@ def discretized_mix_logistic_loss(x, l):
     # the observed sub-pixel value
 
     inner_inner_cond = (cdf_delta > 1e-5).float()
-    inner_inner_out = inner_inner_cond * torch.log(torch.clamp(cdf_delta, min=1e-12)) + (1. - inner_inner_cond) * (
-            log_pdf_mid - np.log(127.5))
+    inner_inner_out = inner_inner_cond * torch.log(torch.clamp(cdf_delta, min=1e-12)) + (1. - inner_inner_cond) * (log_pdf_mid - np.log(127.5))
     inner_cond = (x > 0.999).float()
     inner_out = inner_cond * log_one_minus_cdf_min + (1. - inner_cond) * inner_inner_out
     cond = (x < -0.999).float()
@@ -98,20 +97,20 @@ def discretized_mix_logistic_loss(x, l):
     return -torch.sum(log_sum_exp(log_probs))
 
 
-def discretized_mix_logistic_loss_1d(x, l):
+def discretized_mix_logistic_loss_1d(x, lh):
     """ log-likelihood for mixture of discretized logistics, assumes the data has been rescaled to [-1,1] interval """
     # Pytorch ordering
     x = x.permute(0, 2, 3, 1)
-    l = l.permute(0, 2, 3, 1)
+    lh = lh.permute(0, 2, 3, 1)
     xs = [int(y) for y in x.size()]
-    ls = [int(y) for y in l.size()]
+    ls = [int(y) for y in lh.size()]
 
     # here and below: unpacking the params of the mixture of logistics
     nr_mix = int(ls[-1] / 3)
-    logit_probs = l[:, :, :, :nr_mix]
-    l = l[:, :, :, nr_mix:].contiguous().view(xs + [nr_mix * 2])  # 2 for mean, scale
-    means = l[:, :, :, :, :nr_mix]
-    log_scales = torch.clamp(l[:, :, :, :, nr_mix:2 * nr_mix], min=-7.)
+    logit_probs = lh[:, :, :, :nr_mix]
+    lh = lh[:, :, :, nr_mix:].contiguous().view(xs + [nr_mix * 2])  # 2 for mean, scale
+    means = lh[:, :, :, :, :nr_mix]
+    log_scales = torch.clamp(lh[:, :, :, :, nr_mix:2 * nr_mix], min=-7.)
     # here and below: getting the means and adjusting them based on preceding
     # sub-pixels
     x = x.contiguous()
@@ -135,8 +134,7 @@ def discretized_mix_logistic_loss_1d(x, l):
     log_pdf_mid = mid_in - log_scales - 2. * F.softplus(mid_in)
 
     inner_inner_cond = (cdf_delta > 1e-5).float()
-    inner_inner_out = inner_inner_cond * torch.log(torch.clamp(cdf_delta, min=1e-12)) + (1. - inner_inner_cond) * (
-            log_pdf_mid - np.log(127.5))
+    inner_inner_out = inner_inner_cond * torch.log(torch.clamp(cdf_delta, min=1e-12)) + (1. - inner_inner_cond) * (log_pdf_mid - np.log(127.5))
     inner_cond = (x > 0.999).float()
     inner_out = inner_cond * log_one_minus_cdf_min + (1. - inner_cond) * inner_inner_out
     cond = (x < -0.999).float()
@@ -149,24 +147,26 @@ def discretized_mix_logistic_loss_1d(x, l):
 def to_one_hot(tensor, n, fill_with=1.):
     # we perform one hot encore with respect to the last axis
     one_hot = torch.FloatTensor(tensor.size() + (n,)).zero_()
-    if tensor.is_cuda: one_hot = one_hot.cuda()
+    if tensor.is_cuda:
+        one_hot = one_hot.cuda()
     one_hot.scatter_(len(tensor.size()), tensor.unsqueeze(-1), fill_with)
     return Variable(one_hot)
 
 
-def sample_from_discretized_mix_logistic_1d(l, nr_mix):
+def sample_from_discretized_mix_logistic_1d(m, nr_mix):
     # Pytorch ordering
-    l = l.permute(0, 2, 3, 1)
-    ls = [int(y) for y in l.size()]
+    m = m.permute(0, 2, 3, 1)
+    ls = [int(y) for y in m.size()]
     xs = ls[:-1] + [1]  # [3]
 
     # unpack parameters
-    logit_probs = l[:, :, :, :nr_mix]
-    l = l[:, :, :, nr_mix:].contiguous().view(xs + [nr_mix * 2])  # for mean, scale
+    logit_probs = m[:, :, :, :nr_mix]
+    m = m[:, :, :, nr_mix:].contiguous().view(xs + [nr_mix * 2])  # for mean, scale
 
     # sample mixture indicator from softmax
     temp = torch.FloatTensor(logit_probs.size())
-    if l.is_cuda: temp = temp.cuda()
+    if m.is_cuda:
+        temp = temp.cuda()
     temp.uniform_(1e-5, 1. - 1e-5)
     temp = logit_probs.data - torch.log(- torch.log(temp))
     _, argmax = temp.max(dim=3)
@@ -174,11 +174,12 @@ def sample_from_discretized_mix_logistic_1d(l, nr_mix):
     one_hot = to_one_hot(argmax, nr_mix)
     sel = one_hot.view(xs[:-1] + [1, nr_mix])
     # select logistic parameters
-    means = torch.sum(l[:, :, :, :, :nr_mix] * sel, dim=4)
+    means = torch.sum(m[:, :, :, :, :nr_mix] * sel, dim=4)
     log_scales = torch.clamp(torch.sum(
-        l[:, :, :, :, nr_mix:2 * nr_mix] * sel, dim=4), min=-7.)
+        m[:, :, :, :, nr_mix:2 * nr_mix] * sel, dim=4), min=-7.)
     u = torch.FloatTensor(means.size())
-    if l.is_cuda: u = u.cuda()
+    if m.is_cuda:
+        u = u.cuda()
     u.uniform_(1e-5, 1. - 1e-5)
     u = Variable(u)
     x = means + torch.exp(log_scales) * (torch.log(u) - torch.log(1. - u))
@@ -187,18 +188,19 @@ def sample_from_discretized_mix_logistic_1d(l, nr_mix):
     return out
 
 
-def sample_from_discretized_mix_logistic(l, nr_mix):
+def sample_from_discretized_mix_logistic(m, nr_mix):
     # Pytorch ordering
-    l = l.permute(0, 2, 3, 1)
-    ls = [int(y) for y in l.size()]
+    m = m.permute(0, 2, 3, 1)
+    ls = [int(y) for y in m.size()]
     xs = ls[:-1] + [3]
 
     # unpack parameters
-    logit_probs = l[:, :, :, :nr_mix]
-    l = l[:, :, :, nr_mix:].contiguous().view(xs + [nr_mix * 3])
+    logit_probs = m[:, :, :, :nr_mix]
+    m = m[:, :, :, nr_mix:].contiguous().view(xs + [nr_mix * 3])
     # sample mixture indicator from softmax
     temp = torch.FloatTensor(logit_probs.size())
-    if l.is_cuda: temp = temp.cuda()
+    if m.is_cuda:
+        temp = temp.cuda()
     temp.uniform_(1e-5, 1. - 1e-5)
     temp = logit_probs.data - torch.log(- torch.log(temp))
     _, argmax = temp.max(dim=3)
@@ -206,15 +208,16 @@ def sample_from_discretized_mix_logistic(l, nr_mix):
     one_hot = to_one_hot(argmax, nr_mix)
     sel = one_hot.view(xs[:-1] + [1, nr_mix])
     # select logistic parameters
-    means = torch.sum(l[:, :, :, :, :nr_mix] * sel, dim=4)
+    means = torch.sum(m[:, :, :, :, :nr_mix] * sel, dim=4)
     log_scales = torch.clamp(torch.sum(
-        l[:, :, :, :, nr_mix:2 * nr_mix] * sel, dim=4), min=-7.)
+        m[:, :, :, :, nr_mix:2 * nr_mix] * sel, dim=4), min=-7.)
     coeffs = torch.sum(F.tanh(
-        l[:, :, :, :, 2 * nr_mix:3 * nr_mix]) * sel, dim=4)
+        m[:, :, :, :, 2 * nr_mix:3 * nr_mix]) * sel, dim=4)
     # sample from logistic & clip to interval
     # we don't actually round to the nearest 8bit value when sampling
     u = torch.FloatTensor(means.size())
-    if l.is_cuda: u = u.cuda()
+    if m.is_cuda:
+        u = u.cuda()
     u.uniform_(1e-5, 1. - 1e-5)
     u = Variable(u)
     x = means + torch.exp(log_scales) * (torch.log(u) - torch.log(1. - u))
